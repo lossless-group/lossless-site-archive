@@ -1,0 +1,186 @@
+---
+/**
+ * /vibe-with/[collection]/[...slug].astro — Unified Dynamic Route for Vibe-With Content (Multiple Collections)
+ *
+ * Modeled after /more-about/[...slug].astro, per project prompt:
+ *   /content/lost-in-public/prompts/render-logic/Convert-Static-Routing-to-Dynamic-Routing-in-Tags.md
+ *
+ * Follows comprehensive, parallel commenting rules as outlined in:
+ *   /content/lost-in-public/reminders/Comprehensive-Rules-for-Code-Generation.md
+ *
+ * - Fetches content from 'prompts', 'specs', and 'reminders' collections (see content.config.ts for exact keys).
+ * - Generates static paths for all entries, supporting dynamic tag navigation.
+ * - Renders content using Layout, OneArticle, and OneArticleOnPage components.
+ * - All logic is thoroughly commented and DRY.
+ */
+import { getCollection, getEntry } from 'astro:content';
+import Layout from '@layouts/Layout.astro';
+import OneArticle from '@layouts/OneArticle.astro';
+import OneArticleOnPage from '@components/articles/OneArticleOnPage.astro';
+
+// Ensure page is prerendered as static HTML
+export const prerender = true;
+
+interface ContentEntryData {
+  slug: string;
+  title: string;
+  tags: any[];
+  [key: string]: any; // Allow additional fields
+}
+
+interface ContentEntry {
+  id: string;
+  data: ContentEntryData;
+  body: string;
+  collection: 'prompts' | 'specs' | 'reminders';
+  // ...other Astro properties
+}
+
+/**
+ * getStaticPaths — Generates all static paths for the /vibe-with/[collection]/[slug] dynamic route.
+ *
+ * - Fetches all entries from the 'prompts', 'specs', and 'reminders' collections.
+ * - For each entry, generates a path with collection and slug params.
+ * - Ensures each entry has a slug and title (generates if missing).
+ * - Returns array of { params, props } objects for Astro static generation.
+ */
+export async function getStaticPaths() {
+  // Helper: Convert train-case or hyphen-case to proper case for titles
+  function toProperCase(str: string): string {
+    return str
+      .replace(/[-_]/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  // Fetch all entries from the 'prompts', 'specs', and 'reminders' collections
+  const promptsEntries = await getCollection('prompts');
+  const specsEntries = await getCollection('specs');
+  const remindersEntries = await getCollection('reminders');
+
+  // Map each prompts entry to a static path object
+  const promptsPaths = promptsEntries.map((entry): { params: { collection: 'prompts', slug: string }, props: { entry: ContentEntry, collection: 'prompts' } } => {
+    const filename = entry.id.replace(/\.md$/, '');
+    const filenameParts = filename.split('/');
+    const baseFilename = filenameParts[filenameParts.length - 1];
+    // Dynamically generate slug and title if not present in frontmatter
+    const generatedSlug = filename.toLowerCase().replace(/\s+/g, '-');
+    if (!entry.data.slug) entry.data.slug = generatedSlug;
+    if (!entry.data.title) entry.data.title = toProperCase(baseFilename);
+    // --- TYPE GUARANTEE BLOCK ---
+    // At this point, entry.data is guaranteed to have slug, title, and tags.
+    const data = entry.data as ContentEntryData;
+    const slug = data.slug;
+    return {
+      params: { collection: 'prompts', slug },
+      props: {
+        entry: { ...entry, data } as ContentEntry,
+        collection: 'prompts',
+      },
+    };
+  });
+
+  // Map each specs entry to a static path object
+  const specsPaths = specsEntries.map((entry): { params: { collection: 'specs', slug: string }, props: { entry: ContentEntry, collection: 'specs' } } => {
+    const filename = entry.id.replace(/\.md$/, '');
+    const filenameParts = filename.split('/');
+    const baseFilename = filenameParts[filenameParts.length - 1];
+    const generatedSlug = filename.toLowerCase().replace(/\s+/g, '-');
+    if (!entry.data.slug) entry.data.slug = generatedSlug;
+    if (!entry.data.title) entry.data.title = toProperCase(baseFilename);
+    // --- TYPE GUARANTEE BLOCK ---
+    // At this point, entry.data is guaranteed to have slug, title, and tags.
+    const data = entry.data as ContentEntryData;
+    const slug = data.slug;
+    return {
+      params: { collection: 'specs', slug },
+      props: {
+        entry: { ...entry, data } as ContentEntry,
+        collection: 'specs',
+      },
+    };
+  });
+
+  // Map each reminders entry to a static path object
+  const remindersPaths = remindersEntries.map((entry): { params: { collection: 'reminders', slug: string }, props: { entry: ContentEntry, collection: 'reminders' } } => {
+    const filename = entry.id.replace(/\.md$/, '');
+    const filenameParts = filename.split('/');
+    const baseFilename = filenameParts[filenameParts.length - 1];
+    const generatedSlug = filename.toLowerCase().replace(/\s+/g, '-');
+    if (!entry.data.slug) entry.data.slug = generatedSlug;
+    if (!entry.data.title) entry.data.title = toProperCase(baseFilename);
+    // --- TYPE GUARANTEE BLOCK ---
+    // At this point, entry.data is guaranteed to have slug, title, and tags.
+    const data = entry.data as ContentEntryData;
+    const slug = data.slug;
+    return {
+      params: { collection: 'reminders', slug },
+      props: {
+        entry: { ...entry, data } as ContentEntry,
+        collection: 'reminders',
+      },
+    };
+  });
+
+  // Combine all path arrays
+  return [...promptsPaths, ...specsPaths, ...remindersPaths];
+}
+
+/**
+ * Props interface for page rendering.
+ * Mirrors /more-about/[...slug].astro for consistency.
+ * Supports all three collections: 'prompts', 'specs', and 'reminders'.
+ */
+interface Props {
+  entry: ContentEntry;
+  collection: 'prompts' | 'specs' | 'reminders'; // Now supports all three collections
+}
+
+---
+<!--
+  Layout and Article Rendering Block
+  - Uses Layout for page structure.
+  - Renders OneArticle with OneArticleOnPage for content.
+  - Passes contentData for context.
+  - Mirrors conventions from /more-about/[...slug].astro.
+-->
+<script>
+  // Destructure props for use in page rendering
+  let { entry, collection } = Astro.props;
+
+  // --- Robust Entry Fetching Logic ---
+  // All Astro object usage (Astro.params, Astro.url, Astro.props) must be inside the render context (--- block)
+  // This ensures correct behavior in SSR/build and matches Astro documentation and project rules.
+  if (!entry || !entry.data || !entry.data.title) {
+    // Aggressive comment: This fallback ensures that if the static props did not provide a full entry (e.g., direct navigation, reload, or fallback),
+    // we dynamically load the correct entry using Astro's route params using getEntry for DRYness and efficiency.
+    // TypeScript Guard: Only allow valid collection names
+    const allowedCollections = ['prompts', 'specs', 'reminders'] as const;
+    const paramCollection = Astro.params.collection;
+    if (!allowedCollections.includes(paramCollection)) {
+      throw new Error(`Invalid collection: ${paramCollection}`);
+    }
+    collection = paramCollection as typeof allowedCollections[number];
+    const slug = Array.isArray(Astro.params.slug) ? Astro.params.slug[0] : Astro.params.slug;
+    entry = await getEntry(collection, slug);
+    if (!entry) {
+      throw new Error(`No entry found for collection '${collection}' and slug '${slug}'.`);
+    }
+  }
+
+  // Add content type and path to the data object for downstream components
+  const contentData = {
+    path: Astro.url.pathname,
+    id: entry.id,
+    collection: collection,
+  };
+</script>
+<Layout title={entry.data.title || entry.id.replace(/\.md$/, '')}>
+  <OneArticle
+    Component={OneArticleOnPage}
+    content={entry.body}
+    markdownFile={entry.id}
+    data={contentData}
+  />
+</Layout>

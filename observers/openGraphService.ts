@@ -13,6 +13,19 @@
  * - Maintains statistics for reporting
  */
 
+/**
+ * IMPORTANT: Error Handling and ReportingService Integration
+ *
+ * As of this revision, there is NO reportingService module or utility available in the observers directory or its submodules.
+ * All error handling in this file is currently performed via console.error and console.log statements.
+ *
+ * The observer specifications and related files reference a reportingService for structured error reporting and logging.
+ * If/when a reportingService implementation becomes available, all error handling locations marked with TODOs in this file
+ * should be refactored to call the appropriate reportingService methods, in addition to or instead of console logging.
+ *
+ * This comment block should remain at the top of the file until reportingService integration is complete.
+ */
+
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import fetch from 'node-fetch';
@@ -107,6 +120,7 @@ export async function processOpenGraphMetadata(
   const needsScreenshot = !extractStringValueForFrontmatter(updatedFrontmatter.og_screenshot_url);
 
   // --- LOGGING: Initial State ---
+  // TODO: Replace console logging with reportingService logging once available
   console.log('[OpenGraph] processOpenGraphMetadata called for', effectiveFilePath);
   console.log('[OpenGraph] Initial updatedFrontmatter:', JSON.stringify(updatedFrontmatter, null, 2));
   console.log('[OpenGraph] needsScreenshot:', needsScreenshot, 'needsOpenGraph:', needsOpenGraph);
@@ -200,6 +214,7 @@ function fetchScreenshotUrlInBackground(url: string, filePath: string): void {
       }
     } catch (error) {
       console.error(`Error in background screenshot fetch for ${url}:`, error);
+      // TODO: Integrate with reportingService.error() or similar when available
     } finally {
       // Remove from tracking set when done
       screenshotFetchInProgress.delete(url);
@@ -302,6 +317,7 @@ function extractFrontmatterForOpenGraph(content: string): {frontmatter: Record<s
     };
   } catch (error) {
     console.error('Error parsing frontmatter:', error);
+    // TODO: Integrate with reportingService.error() or similar when available
     return { frontmatter: null, startIndex: 0, endIndex: 0 };
   }
 }
@@ -343,11 +359,13 @@ async function updateFileWithScreenshotUrl(filePath: string, screenshotUrl: stri
           }
         } catch (error) {
           console.error(`Error updating file ${filePath} with screenshot URL:`, error);
+          // TODO: Integrate with reportingService.error() or similar when available
         }
       }
     }
   } catch (error) {
     console.error(`Error reading file ${filePath}:`, error);
+    // TODO: Integrate with reportingService.error() or similar when available
   }
 }
 
@@ -420,15 +438,17 @@ export async function fetchOpenGraphData(
       return ogData;
     } catch (error: unknown) {
       console.error(`Error fetching OpenGraph data for ${url} (attempt ${attempt}/${MAX_RETRIES}):`, error);
-      
+      // TODO: Integrate with reportingService.error() or similar when available
       if (attempt === MAX_RETRIES) {
         console.error(`Max retries reached for ${url}`);
+        // TODO: Integrate with reportingService.error() or similar when available
         return null;
       }
       
       // Exponential backoff
       const delay = Math.pow(2, attempt) * 1000;
       console.log(`Retrying in ${delay}ms...`);
+      // TODO: Integrate with reportingService.info() or similar when available
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -484,15 +504,17 @@ export async function fetchScreenshotUrl(
       }
     } catch (error: unknown) {
       console.error(`Error fetching screenshot URL for ${url} (attempt ${attempt}/${MAX_RETRIES}):`, error);
-      
+      // TODO: Integrate with reportingService.error() or similar when available
       if (attempt === MAX_RETRIES) {
         console.error(`Max retries reached for ${url}`);
+        // TODO: Integrate with reportingService.error() or similar when available
         return null;
       }
       
       // Exponential backoff
       const delay = Math.pow(2, attempt) * 1000;
       console.log(`Retrying in ${delay}ms...`);
+      // TODO: Integrate with reportingService.info() or similar when available
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
